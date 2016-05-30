@@ -10,6 +10,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+// Hub manages websocket connections
 type Hub struct{}
 
 type conn struct {
@@ -19,14 +20,18 @@ type conn struct {
 }
 
 var (
-	connMap map[string]conn
-	mtx     sync.RWMutex
+	badConns     []string
+	badConnsLock sync.RWMutex
+	connMap      map[string]conn
+	connMapLock  sync.RWMutex
 )
 
 func init() {
 	connMap = map[string]conn{}
+	badConns = []string{}
 }
 
+// Add creates a new ws connection and returns a done chan
 func (h *Hub) Add(w http.ResponseWriter, r *http.Request) chan bool {
 	up := websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -45,39 +50,63 @@ func (h *Hub) Add(w http.ResponseWriter, r *http.Request) chan bool {
 		WS:   ws,
 	}
 
-	mtx.Lock()
+	connMapLock.Lock()
 	connMap[c.ID] = c
-	mtx.Unlock()
+	connMapLock.Unlock()
 
 	return c.Done
 }
 
+// Publish writes bytes to all connections
+// it removes connections and calls done chan if error
 func (h *Hub) Publish(b []byte) {
 	wg := sync.WaitGroup{}
-	mtx.RLock()
 
+	connMapLock.RLock()
 	for _, c := range connMap {
 		wg.Add(1)
-		go writeCleanup(c, b, &wg)
+		go write(c, b, &wg)
 	}
+	connMapLock.RUnlock()
 
-	mtx.RUnlock()
 	wg.Wait()
+
+	cleanup()
 }
 
-func writeCleanup(c conn, b []byte, wg *sync.WaitGroup) {
+func cleanup() {
+	badConnsLock.RLock()
+
+	for _, id := range badConns {
+		connMapLock.RLock()
+		c := connMap[id]
+		connMapLock.RUnlock()
+
+		c.Done <- true
+		c.WS.Close()
+
+		connMapLock.Lock()
+		delete(connMap, id)
+		connMapLock.Unlock()
+	}
+
+	badConnsLock.RUnlock()
+
+	badConnsLock.Lock()
+	badConns = []string{}
+	badConnsLock.Unlock()
+}
+
+func write(c conn, b []byte, wg *sync.WaitGroup) {
 	log.Println("writing message")
 
 	err := c.WS.WriteMessage(websocket.TextMessage, b)
 	if err != nil {
-		c.WS.Close()
-		c.Done <- true
+		log.Printf("error writing message to websocket: %s", err)
 
-		mtx.Lock()
-		delete(connMap, c.ID)
-		mtx.Unlock()
-
-		log.Printf("error writing message to websocket: %s; closing", err)
+		badConnsLock.Lock()
+		badConns = append(badConns, c.ID)
+		badConnsLock.Unlock()
 	}
 	wg.Done()
 }

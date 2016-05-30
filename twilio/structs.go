@@ -8,6 +8,7 @@ import (
 
 type score float64
 
+// represents nested structure of Twilio AddOn payload
 type addOns struct {
 	Results struct {
 		IBMWatsonSentiment struct {
@@ -46,6 +47,8 @@ func (s *score) UnmarshalJSON(d []byte) error {
 	return nil
 }
 
+// GetInfo parses values from Twilio API
+// includes IBM Watson Values
 func GetInfo(v url.Values) (info, error) {
 	ao := addOns{}
 	b := []byte(v.Get("AddOns"))
