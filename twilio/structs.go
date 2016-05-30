@@ -2,12 +2,13 @@ package twilio
 
 import (
 	"encoding/json"
+	"net/url"
 	"strconv"
 )
 
 type score float64
 
-type AddOns struct {
+type addOns struct {
 	Results struct {
 		IBMWatsonSentiment struct {
 			Result struct {
@@ -20,7 +21,7 @@ type AddOns struct {
 	} `json:"results"`
 }
 
-type Message struct {
+type info struct {
 	From    string  `json:"from"`
 	Type    string  `json:"type"`
 	Score   float64 `json:"score"`
@@ -43,4 +44,21 @@ func (s *score) UnmarshalJSON(d []byte) error {
 	*s = score(fl)
 
 	return nil
+}
+
+func GetInfo(v url.Values) (info, error) {
+	ao := addOns{}
+	b := []byte(v.Get("AddOns"))
+	err := json.Unmarshal(b, &ao)
+	if err != nil {
+		return info{}, err
+	}
+
+	ds := ao.Results.IBMWatsonSentiment.Result.DocSentiment
+	return info{
+		Content: v.Get("Body"),
+		From:    v.Get("From"),
+		Score:   float64(ds.Score),
+		Type:    ds.Type,
+	}, nil
 }
