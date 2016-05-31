@@ -18,7 +18,7 @@ func main() {
 	http.HandleFunc("/sms", handleSMS)
 	http.HandleFunc("/ws", handleWS)
 
-	log.Printf("Twilio API running on %s", addr)
+	log.Printf("Twilio API running on %s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
@@ -41,24 +41,24 @@ func handleSMS(w http.ResponseWriter, r *http.Request) {
 	// respond
 	_, err := w.Write(smsTwiml)
 	if err != nil {
-		log.Printf("writer error: %s", err)
+		log.Printf("writer error: %s\n", err)
 	}
 
 	err = r.ParseForm()
 	if err != nil {
-		log.Printf("request parse form error: %s", err)
+		log.Printf("request parse form error: %s\n", err)
 		return
 	}
 
 	info, err := twilio.GetInfo(r.Form)
 	if err != nil {
-		log.Printf("Twilio parse error: %s", err)
+		log.Printf("Twilio parse error: %s\n", err)
 		return
 	}
 
 	b, err := json.Marshal(info)
 	if err != nil {
-		log.Printf("JSON marshal error on Twilio info: %s", err)
+		log.Printf("JSON marshal error on Twilio info: %s\n", err)
 		return
 	}
 
