@@ -11,7 +11,6 @@ import (
 
 var (
 	addr = "localhost:12345"
-	hub  websockets.Hub
 )
 
 func main() {
@@ -47,7 +46,7 @@ func handleSMS(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		log.Printf("parse form error: %s", err)
+		log.Printf("request parse form error: %s", err)
 		return
 	}
 
@@ -59,17 +58,17 @@ func handleSMS(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(info)
 	if err != nil {
-		log.Printf("json marshal error on Twilio info: %s", err)
+		log.Printf("JSON marshal error on Twilio info: %s", err)
 		return
 	}
 
-	hub.Publish(b)
+	websockets.Hub.Publish(b)
 }
 
 func handleWS(w http.ResponseWriter, r *http.Request) {
-	log.Println("websocket request")
+	log.Println("got websocket request")
 
-	done := hub.Add(w, r)
+	done := websockets.Hub.Add(w, r)
 	<-done
 
 	log.Println("closing HTTP connection")
