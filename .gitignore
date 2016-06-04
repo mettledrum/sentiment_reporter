@@ -1,0 +1,4 @@
+client/public
+.idea
+client/npm-debug.log
+node_modules

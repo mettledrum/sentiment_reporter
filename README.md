@@ -1,7 +1,14 @@
 # Sentiment Reporter
-- websockets and Twilio and IBM Watson
-- view texts and their sentiments in your browser
+- websockets, Twilio, and IBM Watson
+- view text messages' sentiments in your browser
 
 ## TODO
-- make websockets hub better
-- identify individual websocket connections so borked ones can close
+- hook up websockets to a React.js component
+- ~~make websockets hub better~~
+- ~~identify individual websocket connections so borked ones can close~~
+
+## _Inspirado_
+- [React.js setup](https://www.codementor.io/reactjs/tutorial/beginner-guide-setup-reactjs-environment-npm-babel-6-webpack)
+- [testing using ngrok](https://www.twilio.com/blog/2013/10/test-your-webhooks-locally-with-ngrok.html)
+- [websockets in Go example](https://github.com/BertoOrt/waffles-game-theory)
+- [Gorilla Go websockets](https://github.com/gorilla/websocket)
