@@ -22,7 +22,7 @@ type addOns struct {
 	} `json:"results"`
 }
 
-type info struct {
+type Info struct {
 	From    string  `json:"from"`
 	Type    string  `json:"type"`
 	Score   float64 `json:"score"`
@@ -49,16 +49,16 @@ func (s *score) UnmarshalJSON(d []byte) error {
 
 // GetInfo parses values from Twilio API
 // includes IBM Watson Values
-func GetInfo(v url.Values) (info, error) {
+func GetInfo(v url.Values) (Info, error) {
 	ao := addOns{}
 	b := []byte(v.Get("AddOns"))
 	err := json.Unmarshal(b, &ao)
 	if err != nil {
-		return info{}, err
+		return Info{}, err
 	}
 
 	ds := ao.Results.IBMWatsonSentiment.Result.DocSentiment
-	return info{
+	return Info{
 		Content: v.Get("Body"),
 		From:    v.Get("From"),
 		Score:   float64(ds.Score),
