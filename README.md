@@ -4,6 +4,7 @@
 
 ## TODO
 - hook up websockets to a React.js component
+- make it look cooler; like a spectrum of red/green based on sentiment score
 - ~~make websockets hub better~~
 - ~~identify individual websocket connections so borked ones can close~~
 
