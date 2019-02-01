@@ -2,25 +2,9 @@ package twilio
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
-	"strconv"
 )
-
-type score float64
-
-// represents nested structure of Twilio AddOn payload
-type addOns struct {
-	Results struct {
-		IBMWatsonSentiment struct {
-			Result struct {
-				DocSentiment struct {
-					Type  string `json:"type"`
-					Score score  `json:"score"`
-				} `json:"docSentiment"`
-			} `json:"result"`
-		} `json:"ibm_watson_sentiment"`
-	} `json:"results"`
-}
 
 type Info struct {
 	From    string  `json:"from"`
@@ -29,39 +13,40 @@ type Info struct {
 	Content string  `json:"content"`
 }
 
-// IBM docSentiment.score is returned as string :(
-// convert it to float64
-func (s *score) UnmarshalJSON(d []byte) error {
-	var str string
-	err := json.Unmarshal(d, &str)
-	if err != nil {
-		return err
-	}
-
-	fl, err := strconv.ParseFloat(str, 64)
-	if err != nil {
-		return err
-	}
-	*s = score(fl)
-
-	return nil
-}
+// {"status":"successful","message":null,"code":null,"results":{"marchex_sentiment":{"request_sid":"asdf","status":"successful","message":null,"code":null,"result":{"result":0.6560785174369812}}}}
 
 // GetInfo parses values from Twilio API
-// includes IBM Watson Values
 func GetInfo(v url.Values) (Info, error) {
-	ao := addOns{}
+	type resp struct {
+		Results struct {
+			MarchexSentiment struct {
+				Result struct {
+					Result float64 `json:"result"`
+				} `json:"result"`
+			} `json:"marchex_sentiment"`
+		} `json:"results"`
+	}
+
 	b := []byte(v.Get("AddOns"))
-	err := json.Unmarshal(b, &ao)
+	fmt.Printf("\n%+v\n", string(b))
+	r := resp{}
+	err := json.Unmarshal(b, &r)
 	if err != nil {
 		return Info{}, err
 	}
 
-	ds := ao.Results.IBMWatsonSentiment.Result.DocSentiment
+	s := r.Results.MarchexSentiment.Result.Result
 	return Info{
 		Content: v.Get("Body"),
 		From:    v.Get("From"),
-		Score:   float64(ds.Score),
-		Type:    ds.Type,
+		Score:   s,
+		Type:    getType(s),
 	}, nil
+}
+
+func getType(s float64) string {
+	if s < 0.5 {
+		return "negative"
+	}
+	return "positive"
 }
